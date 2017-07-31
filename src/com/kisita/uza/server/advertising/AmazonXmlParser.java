@@ -1,5 +1,10 @@
 package com.kisita.uza.server.advertising;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
@@ -17,6 +22,7 @@ public class AmazonXmlParser {
 	private Element rootElement;
 	private int totalResults;
 	private int totalPages;
+	private ArrayList<Item> items;
 	
 	
 	public AmazonXmlParser(InputStream xml) throws Exception{
@@ -37,7 +43,7 @@ public class AmazonXmlParser {
 			if(nodes.item(i).getNodeName().equalsIgnoreCase("Items")){
 				NodeList items = nodes.item(i).getChildNodes();
  				for(int k = 0 ; k < items.getLength() ; k++){
- 					System.out.println(" ---> Node name is : "+items.item(k).getNodeName());
+ 					//System.out.println(" ---> Node name is : "+items.item(k).getNodeName());
  					if(items.item(k).getNodeName().equalsIgnoreCase(childName)){
  						//System.out.println(" ------> Value  is : "+items.item(k).getTextContent());
  						return items.item(k).getTextContent();
@@ -51,7 +57,7 @@ public class AmazonXmlParser {
 	private NodeList getNodeList(String tagName , NodeList nodes){
 		for (int i = 0; i < nodes.getLength(); i++) {
 			if(nodes.item(i).getNodeName().equalsIgnoreCase(tagName)){
-				//System.out.println("*** Node is : "+nodes.item(i).getChildNodes());
+				////System.out.println("*** Node is : "+nodes.item(i).getChildNodes());
 				return  nodes.item(i).getChildNodes();
 			}
 		}
@@ -61,7 +67,7 @@ public class AmazonXmlParser {
 	private NodeList getNodeAtPosition(String tagName , int k ,  NodeList nodes){
 		
 		if(k > nodes.getLength()){
-			System.err.println("k should be <= "+nodes.getLength());
+			//System.err.println("k should be <= "+nodes.getLength());
 			return null;
 		}
 		
@@ -95,7 +101,7 @@ public class AmazonXmlParser {
 		}else{
 			System.out.println("Could not get the number of pages");
 		}
-		getItemsList(nodes);
+		this.items = getItemsList(nodes);
 	}
 	
 	private  ArrayList<String>  getFeatures(NodeList node){
@@ -126,7 +132,7 @@ public class AmazonXmlParser {
 	}
 
 	
-	public void getItemsList(NodeList nodes){
+	private ArrayList<Item> getItemsList(NodeList nodes){
 		ArrayList<Item> list = new ArrayList<>();
 		NodeList items = getNodeList("Items" , nodes);
 			
@@ -138,38 +144,39 @@ public class AmazonXmlParser {
 			if(item != null){
 				// Brand
 				if(((Node) getNodeList("Brand",getNodeList("ItemAttributes",item))) != null){// There is a brand{
-					System.out.println("Brand is : " + ((Node) getNodeList("Brand",getNodeList("ItemAttributes",item))).getTextContent());
+					//System.out.println("Brand is : " + ((Node) getNodeList("Brand",getNodeList("ItemAttributes",item))).getTextContent());
 					article.brand = ((Node) getNodeList("Brand",getNodeList("ItemAttributes",item))).getTextContent();
 				}
 				// Title
 				if(((Node) getNodeList("Title",getNodeList("ItemAttributes",item))) != null){
-					System.out.println("Title is : " + ((Node) getNodeList("Title",getNodeList("ItemAttributes",item))).getTextContent());
+					//System.out.println("Title is : " + ((Node) getNodeList("Title",getNodeList("ItemAttributes",item))).getTextContent());
 					article.title = ((Node) getNodeList("Title",getNodeList("ItemAttributes",item))).getTextContent();
 				}
 				// Size	
 				if(((Node) getNodeList("Size",getNodeList("ItemAttributes",item))) != null){
-					System.out.println("Size is : " + ((Node) getNodeList("Size",getNodeList("ItemAttributes",item))).getTextContent());
+					//System.out.println("Size is : " + ((Node) getNodeList("Size",getNodeList("ItemAttributes",item))).getTextContent());
 					article.size = ((Node) getNodeList("Size",getNodeList("ItemAttributes",item))).getTextContent();
 				}
 				// Color
 				if(((Node) getNodeList("Color",getNodeList("ItemAttributes",item))) != null){
-					System.out.println("Color is : " + ((Node) getNodeList("Color",getNodeList("ItemAttributes",item))).getTextContent());
+					//System.out.println("Color is : " + ((Node) getNodeList("Color",getNodeList("ItemAttributes",item))).getTextContent());
 					article.size = ((Node) getNodeList("Color",getNodeList("ItemAttributes",item))).getTextContent();
 				}
 				// Features
-				ArrayList<String> features = getFeatures(getNodeList("ItemAttributes",item));
+				article.features  = getFeatures(getNodeList("ItemAttributes",item));
 				
-				for(int j = 0 ; j < features.size() ; j ++){
-					System.out.println("Feature : " + features.get(j));
-				}
+				//for(String str :  article.features){
+					//System.out.println("Feature : " + str);
+				//}
+				
 				// Product Type
 				if(((Node) getNodeList("ProductTypeName",getNodeList("ItemAttributes",item))) != null){
-					System.out.println("Type is : " + ((Node) getNodeList("ProductTypeName",getNodeList("ItemAttributes",item))).getTextContent());
+					//System.out.println("Type is : " + ((Node) getNodeList("ProductTypeName",getNodeList("ItemAttributes",item))).getTextContent());
 					article.productTypeName = ((Node) getNodeList("ProductTypeName",getNodeList("ItemAttributes",item))).getTextContent();
 				}
 				// Category
 				if(((Node) getNodeList("Department",getNodeList("ItemAttributes",item))) != null){
-					System.out.println("Category is : " + ((Node) getNodeList("Department",getNodeList("ItemAttributes",item))).getTextContent());
+					//System.out.println("Category is : " + ((Node) getNodeList("Department",getNodeList("ItemAttributes",item))).getTextContent());
 					article.category = ((Node) getNodeList("Department",getNodeList("ItemAttributes",item))).getTextContent();
 				}
 				// Price
@@ -178,11 +185,11 @@ public class AmazonXmlParser {
 					Node amount   = (Node)getNodeList("Amount",listPrice);
 					Node currency = (Node)getNodeList("CurrencyCode",listPrice);
 					
-					article.amount = Integer.valueOf(amount.getTextContent());
+					article.amount = Double.valueOf(formattedAmount(amount.getTextContent()));
 					article.currency = currency.getTextContent();
 					
-					System.out.println("Amount is : " +  article.amount);
-					System.out.println("Currency is : " +  article.currency);
+					//System.out.println("Amount is : " +  article.amount);
+					//System.out.println("Currency is : " +  article.currency);
 				}
 				// Offer
 				if(getNodeList("OfferSummary",item) != null){
@@ -190,18 +197,20 @@ public class AmazonXmlParser {
 						NodeList lowestPrice = getNodeList("LowestNewPrice",getNodeList("OfferSummary",item));
 						if(lowestPrice != null){
 							Node amount = (Node) getNodeList("Amount",lowestPrice);
-							article.offer = Integer.valueOf(amount.getTextContent());
-							System.out.println("Offer is : " +  amount.getTextContent());
+							article.offer = Double.valueOf(formattedAmount(amount.getTextContent()));
+							//System.out.println("Offer is : " + article.offer);
 						}
 					}
 				}
 				//Pictures
 				if(getNodeList("ImageSets",item) != null){
-					ArrayList<String> pictures = getPictures(getNodeList("ImageSets",item));
+					article.pictures =  getPictures(getNodeList("ImageSets",item));
 					
-					for(int j = 0 ; j < pictures.size() ; j ++){
-						System.out.println("Picure : " + pictures.get(j));
+					for(int j = 0 ; j < article.pictures.size() ; j ++){
+						//System.out.println("Picure : " + article.pictures.get(j));
 					}
+				}else{
+					continue;
 				}
 				// Dimensions
 				if((getNodeList("PackageDimensions",getNodeList("ItemAttributes",item))) != null){
@@ -211,27 +220,53 @@ public class AmazonXmlParser {
 					Node weight = (Node)getNodeList("Weight",packageDimensions); //hundredths-pounds
 					Node width  = (Node)getNodeList("Width",packageDimensions);
 					
-					if(height != null )
-						System.out.println("Height is  : " + height.getTextContent());
-					if(length != null )
-						System.out.println("Length is  : " + length.getTextContent());
-					if(weight != null )
-						System.out.println("Weight is  : " + weight.getTextContent());
+					if(height != null ){
+						////System.out.println("Height is  : " + height.getTextContent());
+						article.height = Integer.valueOf(height.getTextContent());
+					}
+					if(length != null ){
+						//System.out.println("Length is  : " + length.getTextContent());
+						article.length = Integer.valueOf(length.getTextContent());
+					}
+					if(weight != null ){
+						//System.out.println("Weight is  : " + weight.getTextContent());
+						article.weight = Integer.valueOf(weight.getTextContent());
+					}
 					if(width != null )
-						System.out.println("Width is   : " + width.getTextContent());
-					
-					
+					{
+						//System.out.println("Width is   : " + width.getTextContent());
+						article.width = Integer.valueOf(width.getTextContent());
+					}				
 				}
 				
 				// Link
 				if(getNodeList("DetailPageURL",item) != null){			
 					Node detailUrl = (Node)getNodeList("DetailPageURL",item);
-					System.out.println("URL : " + detailUrl.getTextContent());
+					article.url = detailUrl.getTextContent();
+					//System.out.println("URL : " + article.url);
 				}
 				
-				System.out.println("------------------------------------------------------");
+				// ID
+				if(getNodeList("ASIN",item) != null){			
+					Node asin = (Node)getNodeList("ASIN",item);
+					//System.out.println("ASIN : " + asin.getTextContent());
+					//"/home/ekisitac/advertising/ASIN_DB.txt"
+					if(isPatternExists("ASIN_DB.txt",asin.getTextContent())){
+						continue;
+					}
+					article.id = asin.getTextContent();
+					//
+					writeInFile("ASIN_DB.txt",article.id);
+				}else{
+					continue;
+				}
+				
+				
+				//System.out.println("------------------------------------------------------");
+				list.add(article); // add the article into the list
 			}
 		}
+		return list;
 	}
 	
 	public int getTotalResults(){
@@ -242,5 +277,59 @@ public class AmazonXmlParser {
 	public int getTotalPages(){
 		
 		return this.totalPages;
+	}
+	
+	public ArrayList<Item> getItems(){
+		return this.items;
+	}
+	
+	public static void writeInFile(String path,String data){
+		//Date date = new Date();  
+		//"/home/ekisitac/advertising/uza-server.json/Log.txt"
+        File file = new File(path);
+        
+        FileWriter writer;
+		try {
+	        // creates the file
+	        file.createNewFile();
+			writer = new FileWriter(file,true);
+	        // Writes the content to the file
+	        writer.write(data); 
+	        writer.write(System.lineSeparator());
+	        writer.flush();
+	        writer.close();
+	        
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+	}
+	
+	public static boolean isPatternExists(String path,String pattern){
+		File file = new File(path);
+		try {
+	        // creates the file
+	        file.createNewFile();
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String line;
+			while ((line = br.readLine()) != null) {
+			       // process the line.
+				if(line.indexOf(pattern) > -1){
+					br.close();
+					return  true;
+				}
+			}
+			br.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		} 
+		return false;
+	}
+	
+	private static String formattedAmount(String x){
+		return x.substring(0, x.length()-2) + "." + x.substring( x.length()-2, x.length());
+		
 	}
 }
