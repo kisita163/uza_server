@@ -184,16 +184,18 @@ public class AmazonXmlParser {
 					NodeList listPrice = getNodeList("ListPrice",getNodeList("ItemAttributes",item));
 					Node amount   = (Node)getNodeList("Amount",listPrice);
 					Node currency = (Node)getNodeList("CurrencyCode",listPrice);
+					Node formattedPrice = (Node)getNodeList("FormattedPrice",listPrice);
 					
 					article.amount = Double.valueOf(formattedAmount(amount.getTextContent()));
 					article.currency = currency.getTextContent();
+					article.formattedAmount = formattedPrice.getTextContent();
 					
-					if(article.amount == 0){
-						continue;
-					}
-					
-					//System.out.println("Amount is : " +  article.amount);
 					//System.out.println("Currency is : " +  article.currency);
+				}
+				
+				if(article.amount == 0.0){
+					//System.out.println("Amount is : " +  article.amount);
+					continue;
 				}
 				// Offer
 				if(getNodeList("OfferSummary",item) != null){
@@ -201,8 +203,10 @@ public class AmazonXmlParser {
 						NodeList lowestPrice = getNodeList("LowestNewPrice",getNodeList("OfferSummary",item));
 						if(lowestPrice != null){
 							Node amount = (Node) getNodeList("Amount",lowestPrice);
-							//article.offer = Double.valueOf(formattedAmount(amount.getTextContent()));
+							if(amount != null){
+							  article.offer = Double.valueOf(formattedAmount(amount.getTextContent()));
 							//System.out.println("Offer is : " + article.offer);
+							}
 						}
 					}
 				}
@@ -265,9 +269,8 @@ public class AmazonXmlParser {
 					continue;
 				}
 				
-				
 				//System.out.println("------------------------------------------------------");
-				list.add(article); // add the article into the list
+			    list.add(article); // add the article into the list
 			}
 		}
 		return list;
@@ -333,7 +336,7 @@ public class AmazonXmlParser {
 	}
 	
 	private static String formattedAmount(String x){
-		System.out.println(x);
+		//System.out.println(x);
 		if(x.length() == 2 )
 			x = "00"+x;
 		if(x.length() == 3 )

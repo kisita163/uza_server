@@ -32,4 +32,6 @@ public class Item {
 	
 	public String url = "";
 	public String id  = "";
+	
+	public String formattedAmount  = "";
 }

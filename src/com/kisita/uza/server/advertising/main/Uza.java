@@ -1,16 +1,16 @@
 package com.kisita.uza.server.advertising.main;
 
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -24,13 +24,9 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseCredentials;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.kisita.uza.server.advertising.amazon.AmazonXmlParser;
+import com.kisita.uza.server.advertising.amazon.Amazon;
 import com.kisita.uza.server.advertising.amazon.Item;
-import com.kisita.uza.server.advertising.amazon.Request;
 import com.kisita.uza.server.advertising.gui.Gui;
-
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 
 
 public class Uza {
@@ -72,6 +68,7 @@ public class Uza {
 		
 	    gui.getQueryButton().addListener(SWT.Selection, new Listener() {
 	        public void handleEvent(Event e) {
+	        	cleanAllWidgets(gui);
 	            switch (e.type) {
 	            case SWT.Selection:
 	              String searchIndex = gui.getSearchIndexChoices().getText();
@@ -79,20 +76,22 @@ public class Uza {
 	              category           = gui.getCategoryChoices().getText();
 	              type               = gui.getTypeChoices().getText();
 	              items              = new ArrayList<Item>();
-	              
+	              Amazon amazon      = new Amazon(true,searchIndex,keyWords);            
 	              if(checkInputData(shell,searchIndex,keyWords,category,type)){
-	            	  Request req = new Request(searchIndex,keyWords,"Images,ItemAttributes,Offers");
-	            	  InputStream xml = getDataFromAmazon(req);
-	            	  
-	            	  if(xml != null){
-	            		  items = parseAmazonData(xml,database,req);
-	            		  System.out.println(items.size());
-	            		  if(items.size() > 0){
-	            			  populateResultsView(items,gui.getAmazonList());
-	            		  }
-	            	  }
+		              try {
+		                  new ProgressMonitorDialog(shell).run(true, true,
+		                      amazon);
+		                } catch (InvocationTargetException ex) {
+		                  MessageDialog.openError(shell, "Error", ex.getMessage());
+		                } catch (InterruptedException ex) {
+		                  MessageDialog.openInformation(shell, "Cancelled", ex.getMessage());
+		                }
 	              }
-	              
+	              //longRunningOperation(shell,gui,searchIndex,keyWords );	
+	              items = amazon.getItems();
+	      		  if(items.size() > 0){
+	      			  populateResultsView(items,gui.getAmazonList());
+	      		  }
 	              break;
 	            }
 	          }
@@ -104,7 +103,7 @@ public class Uza {
 	        	if(firebaseIndex != -1 && firebaseIndex < firebaseItems.size()){
 	        		String desription = "";
 		        	gui.getBrowser().setUrl(firebaseItems.get(firebaseIndex).pictures.get(0));
-		        	gui.getAmount().setText(String.valueOf(firebaseItems.get(firebaseIndex).amount));
+		        	gui.getAmount().setText(String.valueOf(firebaseItems.get(firebaseIndex).formattedAmount));
 		        	gui.getTitle().setText(firebaseItems.get(firebaseIndex).title);
 		        	
 		        	for(String s : firebaseItems.get(firebaseIndex).features){
@@ -187,9 +186,22 @@ public class Uza {
   		  		
 	    return shell;
 	}
-	
-	
-	
+
+	private static void cleanAllWidgets(Gui gui) {
+		// Clean all fields 
+		gui.getFirebaseList().removeAll();
+		gui.getFirebaseList().update();
+		
+		gui.getAmazonList().removeAll();
+		gui.getAmazonList().update();
+		
+		gui.getAmount().setText("");
+		gui.getTitle().setText("");
+		gui.getDesription().setText("");
+		
+		// TODO BROWSER
+	}
+
 
 	protected static void populateResultsView(ArrayList<Item> items, List list) {
 		for(Item item : items){
@@ -197,45 +209,7 @@ public class Uza {
 			list.add(item.id);
 		}
 	}
-
-	private static InputStream getDataFromAmazon(Request req) {
-		
-		System.out.println(req.getRequestUrl(1));
-	    
-	    InputStream xml = req.getXmlStream(1);
-	    
-	    if(xml == null){
-	    	System.out.println("Could not get xml stream from Amazon server");
-	    }
-	    return xml;
-	}
-	        
-	private static ArrayList<Item> parseAmazonData(InputStream xml,DatabaseReference database,Request req){
-		ArrayList<Item> items = new ArrayList<>();
-	    try {
-			AmazonXmlParser parser = new AmazonXmlParser(xml);
-			items = parser.getItems();
-			if(parser.getTotalPages() > 1){
-				for(int k = 2 ; k <= 10 ; k++){
-					
-					if(k >=  parser.getTotalPages()){
-						break;
-					}
-					InputStream xml_k = req.getXmlStream(k);
-					AmazonXmlParser parser_k = new AmazonXmlParser(xml_k);
-					items.addAll(parser_k.getItems());
-					System.out.println(req.getRequestUrl(k));
-				}
-			}		
-		} catch (Exception e) {
-			System.out.println("Could not parse the received stream");
-			e.printStackTrace();
-		}
-	    
-	    return items;
-	}
-	
-
+	      	
 	private void sendDataToFirebaseDatabase(ArrayList<Item> items) {
 		String item_path;
 		String key;
