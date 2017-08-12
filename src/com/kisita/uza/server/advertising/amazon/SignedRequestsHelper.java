@@ -1,4 +1,4 @@
-package com.kisita.uza.server.advertising;
+package com.kisita.uza.server.advertising.amazon;
 
 /**********************************************************************************************
  * Copyright 2009 Amazon.com, Inc. or its affiliates. All Rights Reserved.

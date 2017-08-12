@@ -1,4 +1,4 @@
-package com.kisita.uza.server.advertising;
+package com.kisita.uza.server.advertising.amazon;
 
 import java.util.ArrayList;
 

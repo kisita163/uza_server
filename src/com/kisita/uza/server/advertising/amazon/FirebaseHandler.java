@@ -1,4 +1,4 @@
-package com.kisita.uza.server.advertising;
+package com.kisita.uza.server.advertising.amazon;
 
 import java.io.FileInputStream;
 import java.io.IOException;

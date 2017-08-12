@@ -1,4 +1,4 @@
-package com.kisita.uza.server.advertising;
+package com.kisita.uza.server.advertising.amazon;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -188,6 +188,10 @@ public class AmazonXmlParser {
 					article.amount = Double.valueOf(formattedAmount(amount.getTextContent()));
 					article.currency = currency.getTextContent();
 					
+					if(article.amount == 0){
+						continue;
+					}
+					
 					//System.out.println("Amount is : " +  article.amount);
 					//System.out.println("Currency is : " +  article.currency);
 				}
@@ -197,7 +201,7 @@ public class AmazonXmlParser {
 						NodeList lowestPrice = getNodeList("LowestNewPrice",getNodeList("OfferSummary",item));
 						if(lowestPrice != null){
 							Node amount = (Node) getNodeList("Amount",lowestPrice);
-							article.offer = Double.valueOf(formattedAmount(amount.getTextContent()));
+							//article.offer = Double.valueOf(formattedAmount(amount.getTextContent()));
 							//System.out.println("Offer is : " + article.offer);
 						}
 					}
@@ -329,6 +333,11 @@ public class AmazonXmlParser {
 	}
 	
 	private static String formattedAmount(String x){
+		System.out.println(x);
+		if(x.length() == 2 )
+			x = "00"+x;
+		if(x.length() == 3 )
+			x = "0"+x;
 		return x.substring(0, x.length()-2) + "." + x.substring( x.length()-2, x.length());
 		
 	}
