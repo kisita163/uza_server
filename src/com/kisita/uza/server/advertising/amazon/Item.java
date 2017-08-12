@@ -15,17 +15,17 @@ public class Item {
 	public String productTypeName = "";
 	public String category        = "";
 	
-	public String size =  "";
-	public String color=  "";
+	public String size            =  "";
+	public String color           =  "";
 	
-	public Double height = 0.0;
-	public Double length = 0.0;
-	public Double weight = 0.0;
-	public Double width  = 0.0;
+	public Double height          = 0.0;
+	public Double length          = 0.0;
+	public Double weight          = 0.0;
+	public Double width           = 0.0;
 	
-	public String currency = "";
-	public Double amount      = 0.0;
-	public Double offer       = 0.0;
+	public String currency        = "";
+	public Double amount          = 0.0;
+	public Double offer           = 0.0;
 	
 	public String features = "";
 	public ArrayList<String> pictures = null;

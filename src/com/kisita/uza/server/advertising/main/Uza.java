@@ -315,8 +315,7 @@ public class Uza {
 	}
 
 	public static DatabaseReference initFirebase(){
-		//String path = "/home/kisita/kisita/uza-server.json";
-		String path = "C:\\Users\\hugueski\\Desktop\\uza-server\\uza-server.json";
+		String path = "uza-server.json";
 		   // Initialize Firebase
         try {
             // [START initialize]
