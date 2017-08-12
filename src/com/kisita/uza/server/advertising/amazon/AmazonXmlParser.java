@@ -6,6 +6,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -23,13 +25,24 @@ public class AmazonXmlParser {
 	private int totalResults;
 	private int totalPages;
 	private ArrayList<Item> items;
+	private  Double volumeMax = 0.0;
+	private  Double weightMax = 0.0;
+	private  Double currentVolume;
+	private  Double currentWeight;
 	
 	
-	public AmazonXmlParser(InputStream xml) throws Exception{
+	public AmazonXmlParser(InputStream xml , String volumeMax, String weightMax) throws Exception{
 
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.parse(xml);
+		
+		try{
+			this.volumeMax = Double.valueOf(volumeMax);
+			this.weightMax = Double.valueOf(weightMax);
+		}catch (NumberFormatException e){
+			e.printStackTrace();
+		}
 		// get the first element
         this.rootElement = doc.getDocumentElement();
         parseXml();
@@ -104,13 +117,13 @@ public class AmazonXmlParser {
 		this.items = getItemsList(nodes);
 	}
 	
-	private  ArrayList<String>  getFeatures(NodeList node){
-		ArrayList<String> features = new ArrayList<>();
-		
+	private  String  getFeatures(NodeList node){
+		String features = "";
 		//System.out.println("item length is : "+node.getLength());
 		for(int i = 0 ; i < node.getLength() ; i++){
 			if(node.item(i).getNodeName().equalsIgnoreCase("Feature")){
-				features.add(node.item(i).getTextContent());
+				features += node.item(i).getTextContent();
+				features += System.lineSeparator();
 			}
 		}
 		return features;
@@ -184,16 +197,18 @@ public class AmazonXmlParser {
 					NodeList listPrice = getNodeList("ListPrice",getNodeList("ItemAttributes",item));
 					Node amount   = (Node)getNodeList("Amount",listPrice);
 					Node currency = (Node)getNodeList("CurrencyCode",listPrice);
+					Node formattedPrice = (Node)getNodeList("FormattedPrice",listPrice);
 					
 					article.amount = Double.valueOf(formattedAmount(amount.getTextContent()));
 					article.currency = currency.getTextContent();
+					article.formattedAmount = formattedPrice.getTextContent();
 					
-					if(article.amount == 0){
-						continue;
-					}
-					
-					//System.out.println("Amount is : " +  article.amount);
 					//System.out.println("Currency is : " +  article.currency);
+				}
+				
+				if(article.amount == 0.0){
+					//System.out.println("Amount is : " +  article.amount);
+					continue;
 				}
 				// Offer
 				if(getNodeList("OfferSummary",item) != null){
@@ -201,8 +216,10 @@ public class AmazonXmlParser {
 						NodeList lowestPrice = getNodeList("LowestNewPrice",getNodeList("OfferSummary",item));
 						if(lowestPrice != null){
 							Node amount = (Node) getNodeList("Amount",lowestPrice);
-							//article.offer = Double.valueOf(formattedAmount(amount.getTextContent()));
+							if(amount != null){
+							 // article.offer = Double.valueOf(formattedAmount(amount.getTextContent()));
 							//System.out.println("Offer is : " + article.offer);
+							}
 						}
 					}
 				}
@@ -226,23 +243,31 @@ public class AmazonXmlParser {
 					
 					if(height != null ){
 						////System.out.println("Height is  : " + height.getTextContent());
-						article.height = Integer.valueOf(height.getTextContent());
+						article.height = Double.valueOf(height.getTextContent());
 					}
 					if(length != null ){
 						//System.out.println("Length is  : " + length.getTextContent());
-						article.length = Integer.valueOf(length.getTextContent());
+						article.length = Double.valueOf(length.getTextContent());
 					}
 					if(weight != null ){
 						//System.out.println("Weight is  : " + weight.getTextContent());
-						article.weight = Integer.valueOf(weight.getTextContent());
+						article.weight = Double.valueOf(weight.getTextContent());
 					}
 					if(width != null )
 					{
 						//System.out.println("Width is   : " + width.getTextContent());
-						article.width = Integer.valueOf(width.getTextContent());
-					}				
+						article.width = Double.valueOf(width.getTextContent());
+					}			
 				}
+				// check volume and weight ondition
+				currentVolume = Double.valueOf(formattedVolume(article.height,article.width,article.length).replaceAll(",", "."));
+				currentWeight = Double.valueOf(formattedWeight(article.weight).replaceAll(",", "."));
 				
+				if(currentVolume > volumeMax && volumeMax > 0 )
+					continue;
+				
+				if(currentWeight > weightMax && weightMax > 0 )
+					continue;
 				// Link
 				if(getNodeList("DetailPageURL",item) != null){			
 					Node detailUrl = (Node)getNodeList("DetailPageURL",item);
@@ -259,15 +284,12 @@ public class AmazonXmlParser {
 						continue;
 					}
 					article.id = asin.getTextContent();
-					//
-					writeInFile("ASIN_DB.txt",article.id);
 				}else{
 					continue;
 				}
 				
-				
 				//System.out.println("------------------------------------------------------");
-				list.add(article); // add the article into the list
+			    list.add(article); // add the article into the list
 			}
 		}
 		return list;
@@ -330,6 +352,24 @@ public class AmazonXmlParser {
 			return false;
 		} 
 		return false;
+	}
+	
+	public static String formattedWeight(Double weight){
+		DecimalFormat df = new DecimalFormat("#.##");
+		df.setRoundingMode(RoundingMode.CEILING);
+		
+		double newWeight  = (weight/100)*0.45359237; //  Conversion pounds -> kg
+		
+		return df.format(newWeight);
+	}
+	
+	public static String formattedVolume(Double height,Double width, Double length){
+		DecimalFormat df = new DecimalFormat("#.##");
+		df.setRoundingMode(RoundingMode.CEILING);
+		
+		double newVolume  = (height/100)*(width/100)*(length/100)*16.387064/1000; //  Conversion lbs3 -> cm3
+		
+		return df.format(newVolume);
 	}
 	
 	private static String formattedAmount(String x){

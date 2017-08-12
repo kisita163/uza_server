@@ -6,7 +6,6 @@ import java.util.MissingResourceException;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TabFolder;
@@ -73,6 +72,16 @@ public class Gui {
 	private Text title;
 	private Label lblDescription;
 	private Text desription;
+	private Label lblVolume;
+	private Text volume;
+	private Label lblWeight;
+	private Text weight;
+	private Button btnSave;
+	private Composite composite_1;
+	private Label lblCategory;
+	private Label lblType_1;
+	private Text volumeField;
+	private Text weightField;
 	
 	public Gui(Composite parent) {
 		FillLayout parentLayout = new FillLayout();
@@ -134,38 +143,19 @@ public class Gui {
 		// Category
 		Label lblSeller = new Label(grpQuery, SWT.NONE);
 		lblSeller.setFont(SWTResourceManager.getFont("Times New Roman Greek", 11, SWT.NORMAL));
-		lblSeller.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-		lblSeller.setText("Category");
+		lblSeller.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+		lblSeller.setText("Volume(max m\u00B3)");
 		
-		categoryChoices = new Combo(grpQuery, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
-		categoryChoices.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		categoryChoices.setItems(SearchIndex.categories);
+		volumeField = new Text(grpQuery, SWT.BORDER);
+		volumeField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
 		
 		// Type
 		Label lblType = new Label(grpQuery, SWT.NONE);
 		lblType.setFont(SWTResourceManager.getFont("Times New Roman Greek", 11, SWT.NORMAL));
-		lblType.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-		lblType.setText("Type");
+		lblType.setText("Weight(max Kg)");
 		
-		typeChoices = new Combo(grpQuery, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
-		typeChoices.setEnabled(false);
-		typeChoices.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		
-		
-		categoryChoices.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				typeChoices.setEnabled(true);
-		        if (categoryChoices.getText().equals(SearchIndex.MEN) || categoryChoices.getText().equals(SearchIndex.WOMEN) ) {
-		        	typeChoices.setItems(SearchIndex.men_women_types);
-		          } else if (categoryChoices.getText().equals(SearchIndex.KIDS)) {
-		        	typeChoices.setItems(SearchIndex.kids_types);
-		          } else if (categoryChoices.getText().equals(SearchIndex.UZA_ELECTRONICS)){
-		        	typeChoices.setItems(SearchIndex.electronics_types);
-		          } else if (categoryChoices.getText().equals(SearchIndex.HOME)){
-		        	typeChoices.setItems(SearchIndex.home_types);
-		          }
-			}	
-		});
+		weightField = new Text(grpQuery, SWT.BORDER);
+		weightField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
 		new Label(grpQuery, SWT.NONE);
 		// Send button
 		queryButton = new Button(grpQuery, SWT.NONE);
@@ -231,14 +221,49 @@ public class Gui {
 		toFirebaseList.horizontalSpan = 1;
 		toFirebase.setLayoutData(toFirebaseList);
 		
-		firebase = new Button(grpResults, SWT.NONE);
-		firebase.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-		firebase.setText("Firebase");
-		GridData firebaseData = new GridData();
-		firebaseData.horizontalAlignment = SWT.CENTER;
-		firebaseData.horizontalSpan = 1;
-		firebaseData.grabExcessHorizontalSpace = true;
-		firebase.setLayoutData(firebaseData);
+		composite_1 = new Composite(grpResults, SWT.NONE);
+		composite_1.setLayout(new GridLayout(1, false));
+		composite_1.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+		new Label(composite_1, SWT.NONE);
+		
+		lblCategory = new Label(composite_1, SWT.NONE);
+		lblCategory.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 1));
+		lblCategory.setText("Category");
+		
+		categoryChoices = new Combo(composite_1, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
+		categoryChoices.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		categoryChoices.setItems(SearchIndex.categories);
+		
+		
+		categoryChoices.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				typeChoices.setEnabled(true);
+		        if (categoryChoices.getText().equals(SearchIndex.MEN) || categoryChoices.getText().equals(SearchIndex.WOMEN) ) {
+		        	typeChoices.setItems(SearchIndex.men_women_types);
+		          } else if (categoryChoices.getText().equals(SearchIndex.KIDS)) {
+		        	typeChoices.setItems(SearchIndex.kids_types);
+		          } else if (categoryChoices.getText().equals(SearchIndex.UZA_ELECTRONICS)){
+		        	typeChoices.setItems(SearchIndex.electronics_types);
+		          } else if (categoryChoices.getText().equals(SearchIndex.HOME)){
+		        	typeChoices.setItems(SearchIndex.home_types);
+		          }
+			}	
+		});
+		
+		lblType_1 = new Label(composite_1, SWT.NONE);
+		lblType_1.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 1));
+		lblType_1.setText("Type");
+		
+		typeChoices = new Combo(composite_1, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
+		typeChoices.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		typeChoices.setEnabled(false);
+	    new Label(composite_1, SWT.NONE);
+	    new Label(composite_1, SWT.NONE);
+	    
+	    
+	    firebase = new Button(composite_1, SWT.NONE);
+	    firebase.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+	    firebase.setText("Send");
 
 		
         /////////////////////////END DETAILS  - START RESULTS////////////////////////////////////////////	
@@ -271,19 +296,39 @@ public class Gui {
 		amount = new Text(detailsComposite, SWT.BORDER | SWT.READ_ONLY);
 		amount.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		
+		lblVolume = new Label(detailsComposite, SWT.NONE);
+		lblVolume.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		lblVolume.setText("Volume");
+		
+		volume = new Text(detailsComposite, SWT.BORDER | SWT.READ_ONLY);
+		volume.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
+		lblWeight = new Label(detailsComposite, SWT.NONE);
+		lblWeight.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		lblWeight.setText("Weight");
+		
+		weight = new Text(detailsComposite, SWT.BORDER | SWT.READ_ONLY);
+		weight.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
 		lblTitle = new Label(detailsComposite, SWT.NONE);
 		lblTitle.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1));
 		lblTitle.setText("Title");
 		
-		title = new Text(detailsComposite, SWT.MULTI | SWT.BORDER | SWT.READ_ONLY | SWT.H_SCROLL);
+		title = new Text(detailsComposite, SWT.MULTI | SWT.BORDER | SWT.H_SCROLL);
 		title.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 		
 		lblDescription = new Label(detailsComposite, SWT.NONE);
 		lblDescription.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1));
 		lblDescription.setText("Description");
 		
-		desription = new Text(detailsComposite, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.READ_ONLY);
+		desription = new Text(detailsComposite, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
 		desription.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+		new Label(detailsComposite, SWT.NONE);
+		
+		btnSave = new Button(detailsComposite, SWT.NONE);
+	
+		btnSave.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+		btnSave.setText("Save");
 	 }
 
 	/**
@@ -406,5 +451,25 @@ public class Gui {
 
 		public Text getDesription() {
 			return desription;
+		}
+
+		public Text getVolume() {
+			return volume;
+		}
+
+		public Text getWeight() {
+			return weight;
+		}
+
+		public Button getBtnSave() {
+			return btnSave;
+		}
+
+		public Text getVolumeField() {
+			return volumeField;
+		}
+
+		public Text getWeightField() {
+			return weightField;
 		}
 }

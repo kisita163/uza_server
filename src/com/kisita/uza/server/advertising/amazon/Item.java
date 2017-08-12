@@ -18,18 +18,20 @@ public class Item {
 	public String size =  "";
 	public String color=  "";
 	
-	public int height = 0;
-	public int length = 0;
-	public int weight = 0;
-	public int width  = 0;
+	public Double height = 0.0;
+	public Double length = 0.0;
+	public Double weight = 0.0;
+	public Double width  = 0.0;
 	
 	public String currency = "";
 	public Double amount      = 0.0;
 	public Double offer       = 0.0;
 	
-	public ArrayList<String> features = null;
+	public String features = "";
 	public ArrayList<String> pictures = null;
 	
 	public String url = "";
 	public String id  = "";
+	
+	public String formattedAmount  = "";
 }
