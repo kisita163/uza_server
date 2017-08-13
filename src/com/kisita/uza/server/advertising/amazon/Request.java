@@ -73,6 +73,8 @@ public class Request {
         params.put("Keywords",this.keyWord);         //chaussures
         params.put("ItemPage", String.valueOf(itemPage));            //Returns a specific page of items from the available search results. Up to ten items are returned per page.
         params.put("ResponseGroup", this.responseGroup); // Images,ItemAttributes,Offers
+        params.put("Availability", "Available");
+
 
         this.requestUrl = helper.sign(params);
 		
