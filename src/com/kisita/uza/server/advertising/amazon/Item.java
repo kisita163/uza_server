@@ -15,8 +15,8 @@ public class Item {
 	public String productTypeName = "";
 	public String category        = "";
 	
-	public String size            =  "";
-	public String color           =  "";
+	public String size            = "";
+	public String color           = "";
 	
 	public Double height          = 0.0;
 	public Double length          = 0.0;
@@ -27,11 +27,12 @@ public class Item {
 	public Double amount          = 0.0;
 	public Double offer           = 0.0;
 	
-	public String features = "";
-	public ArrayList<String> pictures = null;
+	public String features        = "";
+	public ArrayList<String> pictures = new ArrayList<>();
 	
 	public String url = "";
 	public String id  = "";
 	
 	public String formattedAmount  = "";
+	public String key              = "";
 }

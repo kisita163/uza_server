@@ -82,6 +82,37 @@ public class Gui {
 	private Label lblType_1;
 	private Text volumeField;
 	private Text weightField;
+	private Group group;
+	private Browser itemsBrowser;
+	private Composite itemDetailComposite;
+	private Label label;
+	private Text itemAmountField;
+	private Label label_1;
+	private Text itemVolumeField;
+	private Label label_2;
+	private Text itemWeightField;
+	private Label label_3;
+	private Text itemTitleField;
+	private Label label_5;
+	private Text itemDescriptionField;
+	private Button itemSaveButton;
+	private Group grpItems;
+	private Button itemDeleteButton;
+	private Group grpItemsQuery;
+	private Label llbItemsCategory;
+	private Label lblNewLabel;
+	private Combo itemsCategory;
+	private Combo itemsType;
+	private Button btnSearch;
+	private Label lblNewLabel_1;
+	private Text itemsMinPrice;
+	private Label lblMaxPrice;
+	private Text itemsMaxPrice;
+	private List itemsList;
+	private Label lblId;
+	private Text idItemsIdField;
+	private Button prevPicBtn;
+	private Button nextPicBtn;
 	
 	public Gui(Composite parent) {
 		FillLayout parentLayout = new FillLayout();
@@ -96,7 +127,7 @@ public class Gui {
 		tabAmazonQuery.setText("Amazon Query");
 		
 		TabItem tabCommands = new TabItem(tabFolder, SWT.NONE);
-		tabCommands.setText("Commands");
+		tabCommands.setText("Items");
 		
 		Composite amazonQuery = new Composite(tabFolder,SWT.NULL);
 		amazonQuery.setFont(SWTResourceManager.getFont("Times New Roman TUR", 10, SWT.BOLD));
@@ -234,22 +265,6 @@ public class Gui {
 		categoryChoices.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		categoryChoices.setItems(SearchIndex.categories);
 		
-		
-		categoryChoices.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				typeChoices.setEnabled(true);
-		        if (categoryChoices.getText().equals(SearchIndex.MEN) || categoryChoices.getText().equals(SearchIndex.WOMEN) ) {
-		        	typeChoices.setItems(SearchIndex.men_women_types);
-		          } else if (categoryChoices.getText().equals(SearchIndex.KIDS)) {
-		        	typeChoices.setItems(SearchIndex.kids_types);
-		          } else if (categoryChoices.getText().equals(SearchIndex.UZA_ELECTRONICS)){
-		        	typeChoices.setItems(SearchIndex.electronics_types);
-		          } else if (categoryChoices.getText().equals(SearchIndex.HOME)){
-		        	typeChoices.setItems(SearchIndex.home_types);
-		          }
-			}	
-		});
-		
 		lblType_1 = new Label(composite_1, SWT.NONE);
 		lblType_1.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 1));
 		lblType_1.setText("Type");
@@ -257,8 +272,7 @@ public class Gui {
 		typeChoices = new Combo(composite_1, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
 		typeChoices.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		typeChoices.setEnabled(false);
-	    new Label(composite_1, SWT.NONE);
-	    new Label(composite_1, SWT.NONE);
+		setCategoryAndType(categoryChoices,typeChoices);
 	    
 	    
 	    firebase = new Button(composite_1, SWT.NONE);
@@ -329,7 +343,175 @@ public class Gui {
 	
 		btnSave.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
 		btnSave.setText("Save");
+		
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		Composite itemsQuery = new Composite(tabFolder,SWT.NULL);
+		itemsQuery.setFont(SWTResourceManager.getFont("Times New Roman TUR", 10, SWT.BOLD));
+		tabCommands.setControl(itemsQuery);
+		
+		GridLayout itemsQueryLayout = new GridLayout();
+		itemsQueryLayout.numColumns = 2;
+		//itemsQueryLayout.makeColumnsEqualWidth = true;
+		itemsQuery.setLayout(itemsQueryLayout);
+		
+		grpItemsQuery = new Group(itemsQuery, SWT.NONE);
+		grpItemsQuery.setLayout(new GridLayout(2, false));
+		grpItemsQuery.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		grpItemsQuery.setText("Query");
+		
+		lblId = new Label(grpItemsQuery, SWT.NONE);
+		lblId.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		lblId.setText("Id");
+		
+		idItemsIdField = new Text(grpItemsQuery, SWT.BORDER);
+		idItemsIdField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
+		llbItemsCategory = new Label(grpItemsQuery, SWT.NONE);
+		llbItemsCategory.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		llbItemsCategory.setText("Category");
+		
+		itemsCategory = new Combo(grpItemsQuery, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
+		itemsCategory.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
+		lblNewLabel = new Label(grpItemsQuery, SWT.NONE);
+		lblNewLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		lblNewLabel.setText("Type");
+		
+		itemsType = new Combo(grpItemsQuery, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
+		itemsType.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
+		setCategoryAndType(itemsCategory,itemsType);
+		
+		lblNewLabel_1 = new Label(grpItemsQuery, SWT.NONE);
+		lblNewLabel_1.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+		lblNewLabel_1.setText("Min. Price");
+		
+		itemsMinPrice = new Text(grpItemsQuery, SWT.BORDER);
+		itemsMinPrice.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
+		lblMaxPrice = new Label(grpItemsQuery, SWT.NONE);
+		lblMaxPrice.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+		lblMaxPrice.setText("Max. Price");
+		
+		itemsMaxPrice = new Text(grpItemsQuery, SWT.BORDER);
+		itemsMaxPrice.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		new Label(grpItemsQuery, SWT.NONE);
+		
+		btnSearch = new Button(grpItemsQuery, SWT.NONE);
+		btnSearch.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		btnSearch.setText("Search");
+		
+		group = new Group(itemsQuery, SWT.NONE);
+		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 2));
+		group.setText("Details");
+		GridLayout gl_group = new GridLayout();
+		gl_group.numColumns = 2;
+		gl_group.makeColumnsEqualWidth = true;
+		group.setLayout(gl_group);
+		
+		Composite itemBrowserComposite = new Composite(group, SWT.NONE);
+		GridLayout browserGridLayout = new GridLayout();
+		browserGridLayout.numColumns = 2;
+		browserGridLayout.makeColumnsEqualWidth = true;
+		itemBrowserComposite.setLayout(browserGridLayout);
+		
+		itemBrowserComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		itemsBrowser = new Browser(itemBrowserComposite, SWT.NONE);
+		itemsBrowser.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+		
+		prevPicBtn = new Button(itemBrowserComposite, SWT.NONE);
+		prevPicBtn.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		prevPicBtn.setText("Previous");
+		
+		nextPicBtn = new Button(itemBrowserComposite, SWT.NONE);
+		nextPicBtn.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		nextPicBtn.setText("Next");
+		
+		itemDetailComposite = new Composite(group, SWT.NONE);
+		itemDetailComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		itemDetailComposite.setFont(SWTResourceManager.getFont("Times New Roman TUR", 9, SWT.BOLD));
+		GridLayout detailsGridLayout = new GridLayout();
+		detailsGridLayout.numColumns = 2;
+		detailsGridLayout.makeColumnsEqualWidth = true;
+		itemDetailComposite.setLayout(detailsGridLayout);
+		
+		label = new Label(itemDetailComposite, SWT.NONE);
+		label.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		label.setText("Amount ");
+		
+		itemAmountField = new Text(itemDetailComposite, SWT.BORDER );
+		itemAmountField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
+		label_1 = new Label(itemDetailComposite, SWT.NONE);
+		label_1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		label_1.setText("Volume");
+		
+		itemVolumeField = new Text(itemDetailComposite, SWT.BORDER | SWT.READ_ONLY);
+		itemVolumeField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
+		label_2 = new Label(itemDetailComposite, SWT.NONE);
+		label_2.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		label_2.setText("Weight");
+		
+		itemWeightField = new Text(itemDetailComposite, SWT.BORDER | SWT.READ_ONLY);
+		itemWeightField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+		
+		label_3 = new Label(itemDetailComposite, SWT.NONE);
+		label_3.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1));
+		label_3.setText("Title");
+		
+		itemTitleField = new Text(itemDetailComposite, SWT.BORDER | SWT.H_SCROLL | SWT.CANCEL | SWT.MULTI);
+		itemTitleField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+		
+		label_5 = new Label(itemDetailComposite, SWT.NONE);
+		label_5.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false, 2, 1));
+		label_5.setText("Description");
+		
+		itemDescriptionField = new Text(itemDetailComposite, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+		itemDescriptionField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+		Label label_6 = new Label(itemDetailComposite, SWT.NONE);
+		label_6.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+		new Label(itemDetailComposite, SWT.NONE);
+		
+		itemSaveButton = new Button(itemDetailComposite, SWT.NONE);
+		itemSaveButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		itemSaveButton.setText("Save");
+		
+		itemDeleteButton = new Button(itemDetailComposite, SWT.NONE);
+		itemDeleteButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		itemDeleteButton.setText("Delete");
+		
+		grpItems = new Group(itemsQuery, SWT.NONE);
+		grpItems.setLayout(new FillLayout(SWT.HORIZONTAL));
+		grpItems.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+		grpItems.setText("Items");
+		
+		itemsList = new List(grpItems, SWT.V_SCROLL);
 	 }
+	
+	public void setCategoryAndType(Combo categoryChoices, final Combo typeChoices){
+		categoryChoices.setItems(SearchIndex.categories);
+				
+		categoryChoices.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				typeChoices.setEnabled(true);
+		        if (categoryChoices.getText().equals(SearchIndex.MEN) || categoryChoices.getText().equals(SearchIndex.WOMEN) ) {
+		        	typeChoices.setItems(SearchIndex.men_women_types);
+		          } else if (categoryChoices.getText().equals(SearchIndex.KIDS)) {
+		        	typeChoices.setItems(SearchIndex.kids_types);
+		          } else if (categoryChoices.getText().equals(SearchIndex.UZA_ELECTRONICS)){
+		        	typeChoices.setItems(SearchIndex.electronics_types);
+		          } else if (categoryChoices.getText().equals(SearchIndex.HOME)){
+		        	typeChoices.setItems(SearchIndex.home_types);
+		          }
+				}	
+			});
+		
+		typeChoices.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		typeChoices.setEnabled(false);
+	}
+
 
 	/**
 	   * Grabs input focus.
@@ -471,5 +653,73 @@ public class Gui {
 
 		public Text getWeightField() {
 			return weightField;
+		}
+
+		public Text getItemAmountField() {
+			return itemAmountField;
+		}
+
+		public Text getItemVolumeField() {
+			return itemVolumeField;
+		}
+
+		public Text getItemWeightField() {
+			return itemWeightField;
+		}
+
+		public Text getItemTitleField() {
+			return itemTitleField;
+		}
+
+		public Text getItemDescriptionField() {
+			return itemDescriptionField;
+		}
+
+		public Button getItemSaveButton() {
+			return itemSaveButton;
+		}
+
+		public Button getItemDeleteButton() {
+			return itemDeleteButton;
+		}
+
+		public Combo getItemsCategory() {
+			return itemsCategory;
+		}
+
+		public Combo getItemsType() {
+			return itemsType;
+		}
+
+		public Text getItemsMinPrice() {
+			return itemsMinPrice;
+		}
+
+		public Text getItemsMaxPrice() {
+			return itemsMaxPrice;
+		}
+		
+		public List getItemsList(){
+			return itemsList;
+		}
+
+		public Button getBtnSearch() {
+			return btnSearch;
+		}
+		
+		public Browser getItemsBrowser(){
+			return itemsBrowser;
+		}
+
+		public Text getIitemsIdField() {
+			return idItemsIdField;
+		}
+
+		public Button getPrevPicBtn() {
+			return prevPicBtn;
+		}
+
+		public Button getNextPicBtn() {
+			return nextPicBtn;
 		}
 }

@@ -24,6 +24,9 @@ import org.eclipse.swt.widgets.Shell;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseCredentials;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.kisita.uza.server.advertising.amazon.Amazon;
@@ -37,9 +40,13 @@ public class Uza {
 	
 	private static DatabaseReference database = initFirebase();
 	
-	private ArrayList<Item> items = new ArrayList<>();
+	private ArrayList<Item> items             = new ArrayList<>();
 	
-	private ArrayList<Item> firebaseItems = new ArrayList<>() ;
+	private ArrayList<Item> firebaseItems     = new ArrayList<>() ;
+	
+	private static ArrayList<Item> itemsFromFirebase = new ArrayList<>() ;
+	
+	private static ArrayList<Item> searchItemsFromFirebase = new ArrayList<>() ;
 	
 	private String category;
 	
@@ -53,7 +60,10 @@ public class Uza {
 	
 	private ArrayList<String> pictures;
 	
+	private static Gui gui;
+	
 	public static void main(String[] args) {
+		startListeners();
 		Display display = new Display();
 		Shell shell = new Uza().createShell(display);
 		shell.open();
@@ -68,14 +78,14 @@ public class Uza {
 	    final Shell shell = new Shell(display);
 	   
 	    
-	    Gui gui = new Gui(shell);
+	    gui = new Gui(shell);
 	    
 	    
 	    shell.setText(Gui.getResourceString("Uza manager"));
-		
+	   		
 	    gui.getQueryButton().addListener(SWT.Selection, new Listener() {
 	        public void handleEvent(Event e) {
-	        	cleanAllWidgets(gui);
+	        	cleanAmazonQueryWidget(gui);
 	            switch (e.type) {
 	            case SWT.Selection:
 	              String searchIndex = gui.getSearchIndexChoices().getText();
@@ -106,6 +116,7 @@ public class Uza {
 	    
 	    gui.getFirebaseList().addListener(SWT.Selection, new Listener() {
 	        public void handleEvent(Event e) {
+	        	gui.getBrowser().setVisible(true);
 	        	firebaseIndex = gui.getFirebaseList().getSelectionIndex();
 	        	if(firebaseIndex != -1 && firebaseIndex < firebaseItems.size()){
 	        		amazonPicturesIndex = 0;
@@ -145,6 +156,7 @@ public class Uza {
 	    });
   		gui.getAmazonList().addListener(SWT.Selection, new Listener() {
 	        public void handleEvent(Event e) {
+	        	gui.getBrowser().setVisible(true);
 	        	index = gui.getAmazonList().getSelectionIndex();
 	        	if(index < items.size()){
 	        		amazonPicturesIndex = 0;
@@ -159,8 +171,7 @@ public class Uza {
 	        	gui.getTitle().setEditable(true);
 	        	gui.getDesription().setEditable(true);
 	          }
-	        });
-  	
+	        });  	
   		gui.getAdd().addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -245,11 +256,130 @@ public class Uza {
 	        	}
 	        }
   		});
-  		  		
+  		
+	    gui.getBtnSearch().addListener(SWT.Selection, new Listener() {
+	        public void handleEvent(Event e) {
+	        	if(itemsFromFirebase.size() > 0){
+	        		gui.getItemsList().removeAll();
+	        		for(Item item : itemsFromFirebase){
+	        			// Control
+	        			System.out.println("Category  = "+gui.getItemsCategory().getText() + "\n" + 
+	        			                   "Type      = "+gui.getItemsType().getText() + "\n" +
+	        			                   "Min price = "+gui.getItemsMinPrice().getText() + "\n" + 
+	        			                   "Max price = "+gui.getItemsMaxPrice().getText() + "\n");
+	        			// Check ID
+	        			if(!gui.getIitemsIdField().getText().isEmpty()){
+	        				if(!item.id.equalsIgnoreCase(gui.getIitemsIdField().getText()))
+	        					continue;
+	        			}
+	        			// Check category
+	        			if(!gui.getItemsCategory().getText().isEmpty()){
+	        				if(!item.category.equalsIgnoreCase(gui.getItemsCategory().getText()))
+	        					continue;
+	        			}
+	        			// Check type
+	        			if(!gui.getItemsType().getText().isEmpty()){
+	        				if(!item.productTypeName.equalsIgnoreCase(gui.getItemsType().getText()))
+	        					continue;
+	        			}
+	        			//
+	        			
+	        			gui.getItemsList().add(item.id);
+	        		}
+	        		gui.getItemsList().update();
+	        	}
+	        }
+  		});
+	    
+	    gui.getItemsList().addListener(SWT.Selection, new Listener() {
+	        public void handleEvent(Event e) {
+	        	gui.getItemsBrowser().setVisible(true);
+	        	index = gui.getItemsList().getSelectionIndex();
+	        	if(index < itemsFromFirebase.size()){
+	        		amazonPicturesIndex = 0;
+	        		pictures = itemsFromFirebase.get(index).pictures;
+		        	gui.getItemsBrowser().setUrl(itemsFromFirebase.get(index).pictures.get(amazonPicturesIndex));
+		        	gui.getItemAmountField().setText(String.valueOf(itemsFromFirebase.get(index).amount));
+		        	gui.getItemTitleField().setText(itemsFromFirebase.get(index).title);
+		        	gui.getItemVolumeField().setText(AmazonXmlParser.formattedVolume(itemsFromFirebase.get(index).height,itemsFromFirebase.get(index).width,itemsFromFirebase.get(index).length) + " m³");
+		        	gui.getItemWeightField().setText(AmazonXmlParser.formattedWeight(itemsFromFirebase.get(index).weight)+ " Kg");    
+		        	gui.getItemDescriptionField().setText(itemsFromFirebase.get(index).features);
+	        	}
+	          }
+	        });  
+	    
+	    gui.getItemDeleteButton().addListener(SWT.Selection, new Listener() {
+	        public void handleEvent(Event e) {
+				MessageBox  mess =  new MessageBox(shell, SWT.ICON_WARNING | SWT.OK| SWT.CANCEL);
+				mess.setText("Warning");
+				mess.setMessage("Do you really want to delete this item ?");
+	        	index = gui.getItemsList().getSelectionIndex();
+	        	System.out.println("index is  "+index + " size = " + itemsFromFirebase.size());
+	        	if(index > -1 && index < itemsFromFirebase.size()){
+		        	if(mess.open() == SWT.OK){
+			        	database.child("/items/" + itemsFromFirebase.get(index).key).removeValue();
+			        	
+			        	itemsFromFirebase.remove(index);
+			        	gui.getItemsList().remove(index);
+			        	gui.getItemsList().update();
+			        	
+			        	cleanItemsWidgets();
+		        		
+			        	mess = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
+						mess.setText("Information");
+						mess.setMessage("Item deleted");
+						mess.open();
+						
+			        	gui.getItemsList().forceFocus();
+			        	gui.getItemsList().select(index);
+		        	}	
+	        	}
+	        }
+	    });
+	    gui.getItemSaveButton().addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event e) {
+				Map<String, Object> childUpdates = new HashMap<>();
+				String amount      = gui.getItemAmountField().getText();
+				String title       = gui.getItemTitleField().getText();
+				String description = gui.getItemDescriptionField().getText();
+				
+				
+				
+				MessageBox  mess =  new MessageBox(shell, SWT.ICON_WARNING | SWT.OK| SWT.CANCEL);
+				mess.setText("Warning");
+				mess.setMessage("Do you really want to update this item ?");
+				
+				if(index > -1 && index < itemsFromFirebase.size()){
+					childUpdates.put("/items/" + itemsFromFirebase.get(index).key +"/price", amount);
+					childUpdates.put("/items/" + itemsFromFirebase.get(index).key +"/name", title);
+					childUpdates.put("/items/" + itemsFromFirebase.get(index).key +"/description", description);
+					
+					if(mess.open() == SWT.OK){
+						 database.updateChildren(childUpdates);
+						 mess = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
+						 mess.setText("Information");
+						 mess.setMessage("Item updated");
+						 mess.open();
+					}	
+				}			
+			}
+	    	
+	    });
 	    return shell;
 	}
+	
+	private static void cleanItemsWidgets(){
+		gui.getItemsBrowser().setVisible(false);
+    	gui.getItemAmountField().setText("");
+    	gui.getItemTitleField().setText("");
+    	gui.getItemVolumeField().setText("");
+    	gui.getItemWeightField().setText("");    
+    	gui.getItemDescriptionField().setText("");
+	}
 
-	private static void cleanAllWidgets(Gui gui) {
+	private static void cleanAmazonQueryWidget(Gui gui) {
 		// Clean all fields 
 		gui.getFirebaseList().removeAll();
 		gui.getFirebaseList().update();
@@ -264,14 +394,58 @@ public class Uza {
 		gui.getVolume().setText("");
 		gui.getWeight().setText("");
 		// TODO BROWSER
+		gui.getBrowser().setVisible(false);
 	}
-
 
 	protected static void populateResultsView(ArrayList<Item> items, List list) {
 		for(Item item : items){
 			
 			list.add(item.id);
 		}
+	}
+	
+	/**
+     * Start global listener for all Items.
+     */
+    public static void startListeners() {
+        database.child("items").addChildEventListener(new ChildEventListener() {
+
+            public void onChildAdded(DataSnapshot dataSnapshot, String prevChildName) {
+            	//System.out.println("items "+ prevChildName);    
+            	extractDataFromSnapshot(dataSnapshot);
+            }
+
+			public void onChildChanged(DataSnapshot dataSnapshot, String prevChildName) {}
+
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+
+            public void onChildMoved(DataSnapshot dataSnapshot, String prevChildName) {}
+
+            public void onCancelled(DatabaseError databaseError) {
+              
+            }
+        });
+    }
+    
+    private static void extractDataFromSnapshot(DataSnapshot dataSnapshot) {
+		Item item = new Item();
+		item.key             = dataSnapshot.getKey();
+		item.title           = dataSnapshot.child("name").getValue().toString();
+		item.amount          = Double.valueOf(dataSnapshot.child("price").getValue().toString());
+		item.brand           = dataSnapshot.child("brand").getValue().toString();
+		item.category        = dataSnapshot.child("category").getValue().toString();
+		item.currency        = dataSnapshot.child("currency").getValue().toString();
+		item.features        = dataSnapshot.child("description").getValue().toString();
+		item.id              = dataSnapshot.child("id").getValue().toString();
+		item.productTypeName = dataSnapshot.child("type").getValue().toString();
+		item.url             = dataSnapshot.child("url").getValue().toString();
+		
+		for(DataSnapshot child : dataSnapshot.child("pictures").getChildren()){
+			//System.out.println(child.getValue().toString());
+			item.pictures.add(child.getValue().toString());
+		}
+		itemsFromFirebase.add(item);
+        System.out.println("Number of items is  : "+itemsFromFirebase.size());
 	}
 	      	
 	private void sendDataToFirebaseDatabase(ArrayList<Item> items) {
@@ -287,7 +461,7 @@ public class Uza {
 			}
 			key = database.child("items").push().getKey();
 			item_path = "/items/" + key + "/";
-			System.out.println("Path : "+item_path);
+			//System.out.println("Path : "+item_path);
 			
 			data.put(item_path+"brand",item.brand);
 			data.put(item_path+"category",category);
@@ -313,6 +487,7 @@ public class Uza {
 		//System.out.println("Number of items on this page is  : "+items.size());
 		
 	}
+	
 
 	public static DatabaseReference initFirebase(){
 		String path = "uza-server.json";
