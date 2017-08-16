@@ -6,8 +6,11 @@ import java.util.MissingResourceException;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Text;
@@ -110,9 +113,11 @@ public class Gui {
 	private Text itemsMaxPrice;
 	private List itemsList;
 	private Label lblId;
-	private Text idItemsIdField;
+	private Text iitemsIdField;
 	private Button prevPicBtn;
 	private Button nextPicBtn;
+	private Button prvBtn;
+	private Button nxtBtn;
 	
 	public Gui(Composite parent) {
 		FillLayout parentLayout = new FillLayout();
@@ -135,6 +140,7 @@ public class Gui {
 		
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 2;
+		gridLayout.makeColumnsEqualWidth = true;
 		amazonQuery.setLayout(gridLayout);
 	
 		///////////// QUERY /////////////////////		
@@ -291,31 +297,56 @@ public class Gui {
 		
 		GridLayout detailsLayout = new GridLayout();
 		detailsLayout.numColumns = 2;
-		detailsLayout.makeColumnsEqualWidth = true;
+		//detailsLayout.makeColumnsEqualWidth = true;
 		grpDetails.setLayout(detailsLayout);
 		
+		Composite browserComposite = new Composite(grpDetails, SWT.BORDER);
+		GridData browserCompositeData = new GridData(SWT.FILL, SWT.FILL, true, false);
 		
-		browser = new Browser(grpDetails, SWT.NONE);
-		browser.setLayoutData(new GridData(SWT.FILL, SWT.FILL,true, true, 1, 1));
+		
+		browserComposite.setLayoutData(browserCompositeData);
+		GridLayout browserLayout = new GridLayout();
+		browserLayout.numColumns = 2;
+		browserLayout.makeColumnsEqualWidth = true;
+		browserComposite.setLayout(browserLayout);
+		
+		browser = new Browser(browserComposite, SWT.NONE);
+		browser.setLayoutData(new GridData(SWT.FILL, SWT.FILL,true, true,2,1));
+		
+		prvBtn = new Button(browserComposite, SWT.NONE);
+		prvBtn.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+		prvBtn.setText("Previous");
+		
+		nxtBtn = new Button(browserComposite, SWT.NONE);
+		nxtBtn.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		nxtBtn.setText("Next");
 		
 		detailsComposite = new Composite(grpDetails, SWT.NONE);
 		detailsComposite.setFont(SWTResourceManager.getFont("Times New Roman TUR", 9, SWT.BOLD));
 		detailsComposite.setLayout(new GridLayout(2, false));
-		detailsComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		GridData detailsCompositeData =  new GridData();
+		detailsCompositeData.grabExcessHorizontalSpace = true;
+		detailsCompositeData.verticalAlignment = SWT.FILL;
+		detailsCompositeData.horizontalAlignment = SWT.FILL;
+		detailsCompositeData.grabExcessVerticalSpace = true;
+		detailsCompositeData.horizontalSpan = 1;
+		
+		
+		detailsComposite.setLayoutData(detailsCompositeData);
 		
 		lblAmount = new Label(detailsComposite, SWT.NONE);
-		lblAmount.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		lblAmount.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		lblAmount.setText("Amount ");
 		
 		amount = new Text(detailsComposite, SWT.BORDER | SWT.READ_ONLY);
-		amount.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		amount.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		
 		lblVolume = new Label(detailsComposite, SWT.NONE);
 		lblVolume.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		lblVolume.setText("Volume");
 		
 		volume = new Text(detailsComposite, SWT.BORDER | SWT.READ_ONLY);
-		volume.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		volume.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		
 		lblWeight = new Label(detailsComposite, SWT.NONE);
 		lblWeight.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
@@ -337,12 +368,11 @@ public class Gui {
 		
 		desription = new Text(detailsComposite, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
 		desription.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
-		new Label(detailsComposite, SWT.NONE);
 		
 		btnSave = new Button(detailsComposite, SWT.NONE);
-	
-		btnSave.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
-		btnSave.setText("Save");
+		
+			btnSave.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 2, 1));
+			btnSave.setText("Save");
 		
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		
@@ -357,15 +387,16 @@ public class Gui {
 		
 		grpItemsQuery = new Group(itemsQuery, SWT.NONE);
 		grpItemsQuery.setLayout(new GridLayout(2, false));
-		grpItemsQuery.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		GridData  grpItemsQueryData = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
+		grpItemsQuery.setLayoutData(grpItemsQueryData);
 		grpItemsQuery.setText("Query");
 		
 		lblId = new Label(grpItemsQuery, SWT.NONE);
 		lblId.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		lblId.setText("Id");
 		
-		idItemsIdField = new Text(grpItemsQuery, SWT.BORDER);
-		idItemsIdField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		iitemsIdField = new Text(grpItemsQuery, SWT.BORDER);
+		iitemsIdField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		
 		llbItemsCategory = new Label(grpItemsQuery, SWT.NONE);
 		llbItemsCategory.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
@@ -403,14 +434,15 @@ public class Gui {
 		btnSearch.setText("Search");
 		
 		group = new Group(itemsQuery, SWT.NONE);
-		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 2));
+		GridData groudData = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 2);
+		group.setLayoutData(groudData);
 		group.setText("Details");
 		GridLayout gl_group = new GridLayout();
 		gl_group.numColumns = 2;
 		gl_group.makeColumnsEqualWidth = true;
 		group.setLayout(gl_group);
 		
-		Composite itemBrowserComposite = new Composite(group, SWT.NONE);
+		Composite itemBrowserComposite = new Composite(group, SWT.BORDER);
 		GridLayout browserGridLayout = new GridLayout();
 		browserGridLayout.numColumns = 2;
 		browserGridLayout.makeColumnsEqualWidth = true;
@@ -488,6 +520,20 @@ public class Gui {
 		grpItems.setText("Items");
 		
 		itemsList = new List(grpItems, SWT.V_SCROLL);
+		
+		parent.addListener(SWT.Resize, new Listener()
+	    {
+	        @Override
+	        public void handleEvent(Event arg0)
+	        {
+	            Point size = parent.getSize();
+	            browserCompositeData.widthHint = (int) (0.60 * (size.x)/2);
+	            detailsCompositeData.widthHint = (int) (0.40 * (size.x)/2);
+	            
+	            groudData.widthHint = (int) (0.60 * (size.x)/2);
+	            grpItemsQueryData.widthHint = (int) (0.40 * (size.x)/2);
+	        }
+	    });
 	 }
 	
 	public void setCategoryAndType(Combo categoryChoices, final Combo typeChoices){
@@ -712,7 +758,7 @@ public class Gui {
 		}
 
 		public Text getIitemsIdField() {
-			return idItemsIdField;
+			return iitemsIdField;
 		}
 
 		public Button getPrevPicBtn() {
@@ -722,4 +768,14 @@ public class Gui {
 		public Button getNextPicBtn() {
 			return nextPicBtn;
 		}
+
+		public Button getPrvBtn() {
+			return prvBtn;
+		}
+
+		public Button getNxtBtn() {
+			return nxtBtn;
+		}
+		
+		
 }

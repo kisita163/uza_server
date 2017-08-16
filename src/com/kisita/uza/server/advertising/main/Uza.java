@@ -14,6 +14,7 @@ import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.List;
@@ -36,15 +37,15 @@ import com.kisita.uza.server.advertising.gui.Gui;
 
 
 public class Uza {
-	private static final String DATABASE_URL = "https://glam-afc14.firebaseio.com";
+	private static final String DATABASE_URL               = "https://glam-afc14.firebaseio.com";
 	
-	private static DatabaseReference database = initFirebase();
+	private static DatabaseReference database              = initFirebase();
 	
-	private ArrayList<Item> items             = new ArrayList<>();
+	private ArrayList<Item> items                          = new ArrayList<>();
 	
-	private ArrayList<Item> firebaseItems     = new ArrayList<>() ;
+	private ArrayList<Item> firebaseItems                  = new ArrayList<>() ;
 	
-	private static ArrayList<Item> itemsFromFirebase = new ArrayList<>() ;
+	private static ArrayList<Item> itemsFromFirebase       = new ArrayList<>() ;
 	
 	private static ArrayList<Item> searchItemsFromFirebase = new ArrayList<>() ;
 	
@@ -62,6 +63,10 @@ public class Uza {
 	
 	private static Gui gui;
 	
+	private double maxPrice = 0;
+	
+	private double minPrice = 0;
+	
 	public static void main(String[] args) {
 		startListeners();
 		Display display = new Display();
@@ -76,10 +81,10 @@ public class Uza {
 	
 	public Shell createShell(final Display display){
 	    final Shell shell = new Shell(display);
-	   
-	    
 	    gui = new Gui(shell);
 	    
+	    Image small = new Image(display,"pictures/ic_launcher.png");
+	    shell.setImage(small);    
 	    
 	    shell.setText(Gui.getResourceString("Uza manager"));
 	   		
@@ -132,28 +137,7 @@ public class Uza {
 	        	gui.getDesription().setEditable(false);
 	          }
 	        });
-	    gui.getBrowser().addMouseListener(new MouseListener(){
-
-			@Override
-			public void mouseDoubleClick(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void mouseDown(MouseEvent arg0) {
-				if(amazonPicturesIndex < pictures.size()-1){
-					amazonPicturesIndex += 1;
-				}else{
-					amazonPicturesIndex = 0;
-				}			
-				gui.getBrowser().setUrl(pictures.get(amazonPicturesIndex));
-			}
-
-			@Override
-			public void mouseUp(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-			}
-	    });
+	    
   		gui.getAmazonList().addListener(SWT.Selection, new Listener() {
 	        public void handleEvent(Event e) {
 	        	gui.getBrowser().setVisible(true);
@@ -243,6 +227,8 @@ public class Uza {
 	        }
   		});
   		
+  		
+  		
   		gui.getBtnSave().addListener(SWT.Selection, new Listener() {
 	        public void handleEvent(Event e) {
 	        	// Get changes in description and title
@@ -257,16 +243,46 @@ public class Uza {
 	        }
   		});
   		
+  		gui.getItemsMinPrice().addListener(SWT.Modify, new Listener() {
+  			public void handleEvent(Event event) {
+  				gui.getBtnSearch().setEnabled(true);
+  				if(!gui.getItemsMinPrice().getText().isEmpty()){
+  					try {
+  						minPrice = new Double(gui.getItemsMinPrice().getText());
+  						gui.getBtnSearch().setEnabled(true);
+  					} catch (Exception e) {
+  						gui.getBtnSearch().setEnabled(false);
+  					}
+  				}
+  			}
+  		});
+  		
+  		gui.getItemsMaxPrice().addListener(SWT.Modify, new Listener() {
+  			public void handleEvent(Event event) {
+  				gui.getBtnSearch().setEnabled(true);
+  				if(!gui.getItemsMaxPrice().getText().isEmpty()){
+  					try {
+  						maxPrice = new Double(gui.getItemsMaxPrice().getText());
+  						gui.getBtnSearch().setEnabled(true);
+  					} catch (Exception e) {
+  						gui.getBtnSearch().setEnabled(false);
+  					}
+  				}
+  			}
+  		});
+  		
 	    gui.getBtnSearch().addListener(SWT.Selection, new Listener() {
 	        public void handleEvent(Event e) {
+	        	//  Remove everythoing in the search list before populating
+	        	searchItemsFromFirebase.clear();
 	        	if(itemsFromFirebase.size() > 0){
 	        		gui.getItemsList().removeAll();
 	        		for(Item item : itemsFromFirebase){
 	        			// Control
-	        			System.out.println("Category  = "+gui.getItemsCategory().getText() + "\n" + 
+	        			/*System.out.println("Category  = "+gui.getItemsCategory().getText() + "\n" + 
 	        			                   "Type      = "+gui.getItemsType().getText() + "\n" +
 	        			                   "Min price = "+gui.getItemsMinPrice().getText() + "\n" + 
-	        			                   "Max price = "+gui.getItemsMaxPrice().getText() + "\n");
+	        			                   "Max price = "+gui.getItemsMaxPrice().getText() + "\n");*/
 	        			// Check ID
 	        			if(!gui.getIitemsIdField().getText().isEmpty()){
 	        				if(!item.id.equalsIgnoreCase(gui.getIitemsIdField().getText()))
@@ -282,8 +298,18 @@ public class Uza {
 	        				if(!item.productTypeName.equalsIgnoreCase(gui.getItemsType().getText()))
 	        					continue;
 	        			}
-	        			//
+	        			// check max price 
+	        			if(!gui.getItemsMaxPrice().getText().isEmpty()){
+	        				if(item.amount >  maxPrice)
+	        					continue;
+	        			}
+	        			// check max price
+	        			if(!gui.getItemsMinPrice().getText().isEmpty()){
+	        				if(item.amount <  minPrice)
+	        					continue;
+	        			}
 	        			
+	        			searchItemsFromFirebase.add(item);
 	        			gui.getItemsList().add(item.id);
 	        		}
 	        		gui.getItemsList().update();
@@ -295,15 +321,15 @@ public class Uza {
 	        public void handleEvent(Event e) {
 	        	gui.getItemsBrowser().setVisible(true);
 	        	index = gui.getItemsList().getSelectionIndex();
-	        	if(index < itemsFromFirebase.size()){
+	        	if(index < searchItemsFromFirebase.size()){
 	        		amazonPicturesIndex = 0;
-	        		pictures = itemsFromFirebase.get(index).pictures;
-		        	gui.getItemsBrowser().setUrl(itemsFromFirebase.get(index).pictures.get(amazonPicturesIndex));
-		        	gui.getItemAmountField().setText(String.valueOf(itemsFromFirebase.get(index).amount));
-		        	gui.getItemTitleField().setText(itemsFromFirebase.get(index).title);
-		        	gui.getItemVolumeField().setText(AmazonXmlParser.formattedVolume(itemsFromFirebase.get(index).height,itemsFromFirebase.get(index).width,itemsFromFirebase.get(index).length) + " m³");
-		        	gui.getItemWeightField().setText(AmazonXmlParser.formattedWeight(itemsFromFirebase.get(index).weight)+ " Kg");    
-		        	gui.getItemDescriptionField().setText(itemsFromFirebase.get(index).features);
+	        		pictures = searchItemsFromFirebase.get(index).pictures;
+		        	gui.getItemsBrowser().setUrl(searchItemsFromFirebase.get(index).pictures.get(amazonPicturesIndex));
+		        	gui.getItemAmountField().setText(String.valueOf(searchItemsFromFirebase.get(index).amount));
+		        	gui.getItemTitleField().setText(searchItemsFromFirebase.get(index).title);
+		        	gui.getItemVolumeField().setText(AmazonXmlParser.formattedVolume(searchItemsFromFirebase.get(index).height,itemsFromFirebase.get(index).width,itemsFromFirebase.get(index).length) + " m³");
+		        	gui.getItemWeightField().setText(AmazonXmlParser.formattedWeight(searchItemsFromFirebase.get(index).weight)+ " Kg");    
+		        	gui.getItemDescriptionField().setText(searchItemsFromFirebase.get(index).features);
 	        	}
 	          }
 	        });  
@@ -314,12 +340,12 @@ public class Uza {
 				mess.setText("Warning");
 				mess.setMessage("Do you really want to delete this item ?");
 	        	index = gui.getItemsList().getSelectionIndex();
-	        	System.out.println("index is  "+index + " size = " + itemsFromFirebase.size());
-	        	if(index > -1 && index < itemsFromFirebase.size()){
+	        	System.out.println("index is  "+index + " size = " + searchItemsFromFirebase.size());
+	        	if(index > -1 && index < searchItemsFromFirebase.size()){
 		        	if(mess.open() == SWT.OK){
-			        	database.child("/items/" + itemsFromFirebase.get(index).key).removeValue();
+			        	database.child("/items/" + searchItemsFromFirebase.get(index).key).removeValue();
 			        	
-			        	itemsFromFirebase.remove(index);
+			        	searchItemsFromFirebase.remove(index);
 			        	gui.getItemsList().remove(index);
 			        	gui.getItemsList().update();
 			        	
@@ -351,10 +377,10 @@ public class Uza {
 				mess.setText("Warning");
 				mess.setMessage("Do you really want to update this item ?");
 				
-				if(index > -1 && index < itemsFromFirebase.size()){
-					childUpdates.put("/items/" + itemsFromFirebase.get(index).key +"/price", amount);
-					childUpdates.put("/items/" + itemsFromFirebase.get(index).key +"/name", title);
-					childUpdates.put("/items/" + itemsFromFirebase.get(index).key +"/description", description);
+				if(index > -1 && index < searchItemsFromFirebase.size()){
+					childUpdates.put("/items/" + searchItemsFromFirebase.get(index).key +"/price", amount);
+					childUpdates.put("/items/" + searchItemsFromFirebase.get(index).key +"/name", title);
+					childUpdates.put("/items/" + searchItemsFromFirebase.get(index).key +"/description", description);
 					
 					if(mess.open() == SWT.OK){
 						 database.updateChildren(childUpdates);
@@ -367,6 +393,61 @@ public class Uza {
 			}
 	    	
 	    });
+	    
+	    gui.getNextPicBtn().addListener(SWT.Selection, new Listener() {
+
+	    	public void handleEvent(Event e) {
+	    		if(pictures != null){
+	    			if(amazonPicturesIndex < pictures.size()-1){
+	    				amazonPicturesIndex += 1;
+	    			}else{
+	    				amazonPicturesIndex = 0;
+	    			}			
+	    			gui.getItemsBrowser().setUrl(pictures.get(amazonPicturesIndex));
+	    		}
+	    	}
+	    });
+	    
+	    gui.getPrevPicBtn().addListener(SWT.Selection, new Listener() {
+
+	    	public void handleEvent(Event e) {
+	    		if(pictures != null){
+	    			if(amazonPicturesIndex < pictures.size()-1){
+	    				amazonPicturesIndex -= 1;
+	    			}else{
+	    				amazonPicturesIndex = 0;
+	    			}			
+	    			gui.getItemsBrowser().setUrl(pictures.get(amazonPicturesIndex));
+	    		}
+	    	}
+	    });
+	    
+	    gui.getNxtBtn().addListener(SWT.Selection, new Listener() {
+	    	public void handleEvent(Event e) {
+	    		if(pictures != null){
+	    			if(amazonPicturesIndex < pictures.size()-1){
+	    				amazonPicturesIndex += 1;
+	    			}else{
+	    				amazonPicturesIndex = 0;
+	    			}			
+	    			gui.getBrowser().setUrl(pictures.get(amazonPicturesIndex));
+	    		}
+	    	}
+	    });
+	    
+	    gui.getPrvBtn().addListener(SWT.Selection, new Listener() {
+	    	public void handleEvent(Event e) {
+		    		if(pictures != null){
+		    			if(amazonPicturesIndex < pictures.size()-1){
+		    				amazonPicturesIndex -= 1;
+		    			}else{
+		    				amazonPicturesIndex = 0;
+		    			}			
+		    			gui.getBrowser().setUrl(pictures.get(amazonPicturesIndex));
+		    		}
+		    	}
+		    });
+	    
 	    return shell;
 	}
 	
@@ -417,7 +498,14 @@ public class Uza {
 
 			public void onChildChanged(DataSnapshot dataSnapshot, String prevChildName) {}
 
-            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+            	System.out.println(dataSnapshot.getKey());
+            	for(Item item : itemsFromFirebase){
+            		if(item.key.equalsIgnoreCase(dataSnapshot.getKey())){
+            			itemsFromFirebase.remove(item);
+            		}
+            	}
+            }
 
             public void onChildMoved(DataSnapshot dataSnapshot, String prevChildName) {}
 
@@ -445,7 +533,7 @@ public class Uza {
 			item.pictures.add(child.getValue().toString());
 		}
 		itemsFromFirebase.add(item);
-        System.out.println("Number of items is  : "+itemsFromFirebase.size());
+        //System.out.println("Number of items is  : "+itemsFromFirebase.size());
 	}
 	      	
 	private void sendDataToFirebaseDatabase(ArrayList<Item> items) {
